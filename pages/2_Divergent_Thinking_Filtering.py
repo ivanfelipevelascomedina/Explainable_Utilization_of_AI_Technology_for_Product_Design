@@ -180,8 +180,8 @@ if "client" in st.session_state and "design_problem" in st.session_state and "fb
                 data_list,
                 f"{category} Space"
             )
-            st.write("Silhouette: ", silhouette_score)
-            st.write("CH: ", ch_index)
+            #st.write("Silhouette: ", silhouette_score)
+            #st.write("CH: ", ch_index)
 
     elif st.session_state.selected_option == "Order Solutions by Similarity to the Design Problem":
         # Order solutions based on their similarity to the given design problem

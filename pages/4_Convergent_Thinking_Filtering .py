@@ -36,7 +36,16 @@ st.markdown("""
 1. **View the LLM's opinion on one of the chosen options**:
    - To see how the LLM interprets your selected option, choose that option from the drop-down list below the table it belongs to.
    - Make sure you select only one option at a time (a function, a behaviour or a structure), if you choose more than one the result will not be displayed.
-   - To display the results click on the ‘Display selection feature importance’ button at the bottom of the page. This may take a few minutes, so do not worry and wait for the result to load. Once calculated for the first time, the results will be automatically displayed the rest of the times you select this option. 
+   - To display the results click on the "Display selection feature importance" button at the bottom of the page. This may take a few minutes, so do not worry and wait for the result to load. Once calculated for the first time, the results will be automatically displayed the rest of the times you select this option. 
+2. **Understand the model's output**:
+   - For each selected option you will be able to visualise the perception that the model has of your proposal and what it takes into account when generating this opinion.
+   - The **opinion** will be classified as follows:  
+            · **Bad (1/5):** The solution is ineffective, impractical, or irrelevant to the design goal.  
+            · **Poor (2/5):** The solution has major flaws, such as high cost, weak feasibility, or poor performance.  
+            · **Regular (3/5):** The solution is functional but lacks uniqueness, optimization, or strong benefits.  
+            · **Good (4/5):** The solution is well-designed, feasible, and useful, with only minor drawbacks.  
+            · **Excellent (5/5):** The solution is highly innovative, fully feasible, and significantly improves the design goal.  
+   - To understand **how much importance the model gives to each token** (minimum amount of information that the LLM can capture, usually of similar length to a word) a graph will be shown with the question asked to the model, the darker the tokens are shown, the more attention the LLM is paying to generate that answer.
 """)
 
 # CHECK IF ROBERTA IS ALREADY LOADED IN THE SESSION STATE AND DO IT IN CASE IT IS NOT
