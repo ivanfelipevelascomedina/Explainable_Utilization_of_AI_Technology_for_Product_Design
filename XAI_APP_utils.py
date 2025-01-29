@@ -179,8 +179,6 @@ def reduce_and_cluster(embeddings):
     return umap_embeddings, clusters, silhouette_avg, ch_index
 
 # This function creates an interactive embedding space to allow the user visualize each of the LLM generated solutions
-import plotly.express as px
-
 def plot_interactive_clusters(umap_embeddings, clusters, labels, title):
     # Check the dimensionality of the embeddings
     dimensions = umap_embeddings.shape[1]
@@ -192,7 +190,8 @@ def plot_interactive_clusters(umap_embeddings, clusters, labels, title):
             y=umap_embeddings[:, 1],
             color=clusters.astype(str),
             hover_data={"Text": labels},
-            title=title
+            title=title,
+            opacity=0.5  # Adjust transparency (0 = fully transparent, 1 = fully opaque)
         )
     elif dimensions == 3:
         fig = px.scatter_3d(
@@ -201,7 +200,8 @@ def plot_interactive_clusters(umap_embeddings, clusters, labels, title):
             z=umap_embeddings[:, 2],
             color=clusters.astype(str),
             hover_data={"Text": labels},
-            title=title
+            title=title,
+            opacity=0.5  # Adjust transparency (0 = fully transparent, 1 = fully opaque)
         )
     else:
         raise ValueError("Unsupported number of dimensions for UMAP embeddings.")
@@ -454,11 +454,12 @@ def calculate_feature_importance(original_input, role_description, tokenizer, mo
     #st.write("Original solution: ", original_first_token)
     
     # Asure that the first output token from the original input follows the descrived rating criteria in the role description
-    for l in range(10): # Try to generate a Chat GPT4 answer 10 times, if not we say that the classification was not possible
+    for l in range(10): # Try to generate a Chat GPT4 answer 10 times, if not we say that the classification was not possible    
         if original_first_token not in ("excellent", "good", "regular", "poor", "bad"): # If the most probable output token is not one of the ones defined for the Likert-type scale we indicate ChatGPT4 to do so. This words have been checked to be single tokens for GPT4 and GPT4-mini tokenizer
             if l == 0: # In the first iteration we indicate Chat GPT4 that the classification was not done correctly, this will be added to the input for future iterations
                 input = (original_input + "\n\nIMPORTANT: Your previous response did not provide a classification based on the following categories: excellent, good, regular, bad, awful. This time, ensure it aligns with the specified criteria.")
-            original_probs = extract_probs_information(answer_generation(input, role_description)) 
+            original_probs = extract_probs_information(answer_generation(input, role_description))
+            original_first_token = original_probs[0][0]['token'].lower()
         else: # Finish the loop if the answer is generated accorfing to the given criteria
             break
 
@@ -602,8 +603,30 @@ def calculate_feature_importance(original_input, role_description, tokenizer, mo
     cleaned_tokens = [token for token in cleaned_tokens if token not in ["<s>", "</s>"]] # Remove first and last token to avoid visualization errors
     #st.write("Cleaned Tokens:", cleaned_tokens)
 
-    strict_input = original_input + "Try to judge it as the very strict designer you are, focusing on feasibility, originality, and alignment with the design goal. Give an excellent score only when the solution is tryly outstanding"
+    extra_input = (f"You are a design expert skilled in critically evaluating design proposals. Your task is to classify each proposal as Bad, Poor, Regular, Good, or Excellent, based on its structural feasibility, functionality, innovation, efficiency, and relevance to the design goal.\n"
+                        f"- Do not assume every proposal is excellent; critically assess both strengths and weaknesses.\n"  
+                        f"- Bad (1/5): The solution is ineffective, impractical, or irrelevant to the design goal.\n"  
+                        f"- Poor (2/5): The solution has major flaws, such as high cost, weak feasibility, or poor performance.\n"  
+                        f"- Regular (3/5): The solution is functional but lacks uniqueness, optimization, or strong benefits.\n"  
+                        f"- Good (4/5): The solution is well-designed, feasible, and useful, with only minor drawbacks.\n"  
+                        f"- Excellent (5/5): The solution is highly innovative, fully feasible, and significantly improves the design goal.\n"  
+                        f"Be objective, provide a **fair** evaluation, and ensure diversity in ratings based on the actual quality of the proposal.\n"
+                    )
+
+    strict_input = original_input + extra_input
     strict_probs = extract_probs_information(answer_generation(strict_input, role_description))
     strict_first_token = strict_probs[0][0]['token'].lower()
+    # Asure that the first output token from the strict input follows the descrived rating criteria in the role description
+    for o in range(10):
+        if strict_first_token not in ("excellent", "good", "regular", "poor", "bad"):
+            if o == 0:
+                strict_input = (strict_input + "\n\nIMPORTANT: Your previous response did not provide a classification based on the following categories: bad, poor, regular, good, excellent. This time, ensure it aligns with the specified criteria.")
+            strict_probs = extract_probs_information(answer_generation(strict_input, role_description))
+            strict_first_token = strict_probs[0][0]['token'].lower()
+        else:
+            break
+    # Security step
+    if strict_first_token not in ("excellent", "good", "regular", "poor", "bad"):
+        strict_first_token = original_first_token
 
     return strict_first_token, cleaned_tokens, token_scores_normalized
